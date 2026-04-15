@@ -23,6 +23,7 @@ INDEX_CODES: Dict[str, str] = {
 
 # ─── API 地址 ──────────────────────────────────────────────────────────────────
 TENCENT_QUOTE_URL = "https://qt.gtimg.cn/q={codes}"
+SINA_INDEX_URL = "https://hq.sinajs.cn/list={codes}"
 SINA_RANK_URL = (
     "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php"
     "/Market_Center.getHQNodeData"
@@ -113,6 +114,22 @@ class RealtimeClient:
             logger.warning(f"腾讯行情请求失败: {exc}")
             return {}
 
+    def _fetch_sina_indices(self, codes: List[str]) -> Dict[str, dict]:
+        """
+        Fallback for indices using Sina quote API.
+        codes format: ['s_sh000001', 's_sz399001', ...]
+        """
+        if not codes:
+            return {}
+
+        try:
+            resp = self._session.get(SINA_INDEX_URL.format(codes=",".join(codes)), timeout=8)
+            resp.encoding = "gbk"
+            return self._parse_sina_indices(resp.text)
+        except requests.RequestException as exc:
+            logger.warning(f"新浪指数请求失败: {exc}")
+            return {}
+
     @staticmethod
     def _parse_tencent(raw: str) -> Dict[str, dict]:
         """
@@ -171,6 +188,48 @@ class RealtimeClient:
             except (ValueError, IndexError) as exc:
                 logger.debug(f"解析腾讯报价失败 [{code}]: {exc}")
 
+        return result
+
+    @staticmethod
+    def _parse_sina_indices(raw: str) -> Dict[str, dict]:
+        """
+        Parse lines like:
+          var hq_str_s_sh000001="上证指数,3275.84,44.08,1.36,2533795,29219673";
+        """
+        result: Dict[str, dict] = {}
+        pattern = re.compile(r'var hq_str_(s_[a-z]{2}\d+)="([^"]*)"')
+        for symbol, payload in pattern.findall(raw):
+            parts = payload.split(",")
+            if len(parts) < 4:
+                continue
+            try:
+                display_name = parts[0].strip()
+                price = float(parts[1] or 0)
+                change = float(parts[2] or 0)
+                change_pct = float(parts[3] or 0)
+                volume = float(parts[4] or 0) if len(parts) > 4 and parts[4] else 0.0
+                amount = float(parts[5] or 0) if len(parts) > 5 and parts[5] else 0.0
+
+                tencent_code = symbol[2:]  # s_sh000001 -> sh000001
+                ts_code = tencent_to_ts(tencent_code)
+                pre_close = price - change
+
+                result[ts_code] = {
+                    "ts_code": ts_code,
+                    "name": display_name,
+                    "price": price,
+                    "pre_close": pre_close,
+                    "open": price,
+                    "high": price,
+                    "low": price,
+                    "volume": volume,
+                    "amount": amount,
+                    "change": change,
+                    "change_pct": change_pct,
+                    "update_time": datetime.now().strftime("%H:%M:%S"),
+                }
+            except ValueError:
+                continue
         return result
 
     # ── 新浪排行 ───────────────────────────────────────────────────────────────
@@ -259,6 +318,8 @@ class RealtimeClient:
         """
         codes = list(INDEX_CODES.keys())
         data = self._fetch_tencent(codes)
+        if not data:
+            data = self._fetch_sina_indices([f"s_{code}" for code in codes])
 
         result: List[dict] = []
         for tencent_code, display_name in INDEX_CODES.items():
