@@ -56,7 +56,7 @@ def get_session() -> Generator[Session, None, None]:
         - 不要在 with 块外部继续使用 session
         - 查询结果如需在块外使用，请先转换为普通 Python 对象
     """
-    session = Session(get_engine())
+    session = Session(get_engine(), expire_on_commit=False)
     try:
         yield session
         session.commit()
