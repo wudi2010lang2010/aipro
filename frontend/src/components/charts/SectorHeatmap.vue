@@ -24,14 +24,14 @@ const option = computed(() => {
   const points = list.map((item, i) => {
     const x = i % cols
     const y = Math.floor(i / cols)
-    return [x, y, Number(item.change_pct || 0), item.name || "N/A"]
+    return [x, y, Number(item.change_pct || 0), item.name || "未知"]
   })
 
   return {
     tooltip: {
       formatter: (p) => {
         const val = p.data || []
-        return `${val[3] || "N/A"}<br/>Change: ${Number(val[2] || 0).toFixed(2)}%`
+        return `${val[3] || "未知"}<br/>涨跌幅: ${Number(val[2] || 0).toFixed(2)}%`
       },
     },
     grid: { left: 8, right: 8, top: 8, bottom: 30, containLabel: true },
@@ -43,7 +43,7 @@ const option = computed(() => {
       orient: "horizontal",
       left: "center",
       bottom: 0,
-      text: ["Rise", "Fall"],
+      text: ["上涨", "下跌"],
       calculable: true,
       inRange: { color: ["#2a9d8f", "#f1faee", "#e84a5f"] },
     },

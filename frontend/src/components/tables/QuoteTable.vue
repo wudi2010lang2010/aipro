@@ -7,23 +7,23 @@
     @row-click="onRowClick"
   >
     <el-table-column type="index" width="56" label="#" />
-    <el-table-column prop="name" label="Name" min-width="120" />
-    <el-table-column label="Code" min-width="110">
+    <el-table-column prop="name" label="名称" min-width="120" />
+    <el-table-column label="代码" min-width="110">
       <template #default="{ row }">
         <span class="mono">{{ shortCode(row.ts_code) }}</span>
       </template>
     </el-table-column>
-    <el-table-column label="Price" min-width="90" align="right">
+    <el-table-column label="价格" min-width="90" align="right">
       <template #default="{ row }">
         <span :class="priceClass(row)">{{ num(row.price) }}</span>
       </template>
     </el-table-column>
-    <el-table-column label="Change%" min-width="100" align="right">
+    <el-table-column label="涨跌幅" min-width="100" align="right">
       <template #default="{ row }">
         <span :class="priceClass(row)">{{ pct(row.change_pct) }}</span>
       </template>
     </el-table-column>
-    <el-table-column label="Amount" min-width="120" align="right">
+    <el-table-column label="成交额" min-width="120" align="right">
       <template #default="{ row }">
         <span class="mono">{{ amount(row.amount) }}</span>
       </template>

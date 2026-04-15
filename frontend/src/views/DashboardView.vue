@@ -1,10 +1,10 @@
 ﻿<template>
   <div class="dashboard">
     <div class="header">
-      <h2>Market Dashboard</h2>
+      <h2>市场看板</h2>
       <div class="header-right">
         <el-tag :type="marketStore.isOpen ? 'success' : 'info'">{{ marketStore.marketStatus.desc || marketStore.marketStatus.status }}</el-tag>
-        <el-button size="small" :loading="loading" @click="refresh">Refresh</el-button>
+        <el-button size="small" :loading="loading" @click="refresh">刷新</el-button>
       </div>
     </div>
 
@@ -20,14 +20,14 @@
     <div class="grid-2">
       <el-card>
         <template #header>
-          <div class="card-title">Top Gainers</div>
+          <div class="card-title">涨幅榜</div>
         </template>
         <QuoteTable :rows="marketStore.topGainers" @row-click="goKline" />
       </el-card>
 
       <el-card>
         <template #header>
-          <div class="card-title">Sector Heatmap</div>
+          <div class="card-title">板块热力图</div>
         </template>
         <SectorHeatmap :sectors="marketStore.sectors" />
       </el-card>
