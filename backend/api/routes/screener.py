@@ -44,7 +44,7 @@ def get_presets():
 @router.post("/run", summary="执行选股扫描")
 def run_screener(
     preset: str = Query("trend_breakout"),
-    limit: int = Query(100, ge=1, le=500),
+    limit: int = Query(10, ge=1, le=120),
     cond: dict = Body(default={}),
 ):
     preset_key = preset if preset in PRESETS else "trend_breakout"

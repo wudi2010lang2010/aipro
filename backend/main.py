@@ -229,10 +229,14 @@ app.include_router(kline_router)
 from api.routes.screener import router as screener_router  # noqa: E402
 from api.routes.ai import router as ai_router  # noqa: E402
 from api.routes.risk import router as risk_router  # noqa: E402
+from api.routes.portfolio import router as portfolio_router  # noqa: E402
+from api.routes.backtest import router as backtest_router  # noqa: E402
 
 app.include_router(screener_router)
 app.include_router(ai_router)
 app.include_router(risk_router)
+app.include_router(portfolio_router)
+app.include_router(backtest_router)
 
 # from api.routes.portfolio import router as portfolio_router
 # from api.routes.backtest  import router as backtest_router

@@ -1,8 +1,14 @@
 ﻿<template>
   <div class="page">
     <div class="toolbar">
-      <el-select v-model="preset" style="width: 220px" :loading="loadingPresets">
+      <el-select v-model="preset" style="width: 220px" :loading="loadingPresets" @change="run">
         <el-option v-for="(v, k) in presets" :key="k" :label="v.name" :value="k" />
+      </el-select>
+      <el-select v-model="limit" style="width: 120px" @change="run">
+        <el-option :value="10" label="Top 10" />
+        <el-option :value="20" label="Top 20" />
+        <el-option :value="50" label="Top 50" />
+        <el-option :value="120" label="Top 120" />
       </el-select>
       <el-button type="primary" :loading="running" @click="run">执行扫描</el-button>
       <span class="muted">结果: {{ rows.length }} 条</span>
@@ -36,6 +42,7 @@ import { getPresets, runScreener } from '@/api/screener'
 const router = useRouter()
 const presets = ref({})
 const preset = ref('trend_breakout')
+const limit = ref(10)
 const loadingPresets = ref(false)
 const running = ref(false)
 const rows = ref([])
@@ -61,7 +68,7 @@ async function loadPresets() {
 async function run() {
   running.value = true
   try {
-    const res = await runScreener(preset.value, {}, 120)
+    const res = await runScreener(preset.value, {}, limit.value)
     const data = res?.data || {}
     rows.value = data.rows || []
     usedFallback.value = Boolean(data.used_fallback)

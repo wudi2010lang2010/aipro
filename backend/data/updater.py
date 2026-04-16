@@ -184,6 +184,7 @@ class DataUpdater:
         trade_date = format_trade_date()
         logger.info(f"=== 盘后数据更新开始 [{trade_date}] ===")
 
+        self._save_daily_batch(trade_date)
         self._save_daily_basic(trade_date)
         self._save_money_flow(trade_date)
         self._save_north_money(trade_date, trade_date)
@@ -538,6 +539,51 @@ class DataUpdater:
             logger.error(f"保存日线失败 {ts_code}: {exc}")
             return 0
 
+    def _save_daily_batch(self, trade_date: str) -> int:
+        """淇濆瓨鎸囧畾浜ゆ槗鏃ョ殑鍏ㄥ競鍦烘棩绾匡紝杩斿洖鏂板鏉℃暟銆?"""
+        try:
+            from data.schema import DailyKline
+            from data.storage import get_session
+            from data.tushare_client import tushare_client
+
+            df = tushare_client.get_daily_batch(trade_date)
+            if df is None or df.empty:
+                return 0
+
+            count = 0
+            with get_session() as session:
+                existing_codes = {
+                    r.ts_code
+                    for r in session.query(DailyKline.ts_code).filter(
+                        DailyKline.trade_date == trade_date
+                    )
+                }
+                for _, row in df.iterrows():
+                    ts_code = str(row.get("ts_code", "")).strip()
+                    if not ts_code or ts_code in existing_codes:
+                        continue
+                    vol = row.get("vol") or row.get("volume")
+                    session.add(
+                        DailyKline(
+                            ts_code=ts_code,
+                            trade_date=str(row.get("trade_date", trade_date)),
+                            open=row.get("open"),
+                            high=row.get("high"),
+                            low=row.get("low"),
+                            close=row.get("close"),
+                            volume=vol,
+                            amount=row.get("amount"),
+                            pct_chg=row.get("pct_chg"),
+                        )
+                    )
+                    count += 1
+
+            logger.info(f"鍏ㄥ競鍦烘棩绾?[{trade_date}]锛氭柊澧?{count} 鏉?")
+            return count
+        except Exception as exc:
+            logger.error(f"淇濆瓨鍏ㄥ競鍦烘棩绾垮け璐?[{trade_date}]: {exc}")
+            return 0
+
     def _save_minute_kline(
         self,
         ts_code: str,
@@ -725,6 +771,7 @@ class DataUpdater:
         logger.info(f"[手动] 开始拉取盘后数据 [{trade_date}]...")
 
         results = {
+            "daily_kline": self._save_daily_batch(trade_date),
             "daily_basic": self._save_daily_basic(trade_date),
             "money_flow": self._save_money_flow(trade_date),
             "north_money": self._save_north_money(trade_date, trade_date),
